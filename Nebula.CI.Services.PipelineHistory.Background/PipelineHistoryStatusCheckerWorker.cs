@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
@@ -36,12 +37,21 @@ namespace Nebula.CI.Services.PipelineHistory
                 var pipelineRunStatus = await _pipelineRunService.GetStatusAsync(pipelineHistoryId.ToString());
 
                 var pipelineHistory = await _pipelineHistoryRepository.GetAsync(pipelineHistoryId);
+                var nodeDic = Digram.CreateInstance(pipelineHistory.Diagram).NodeList.ToDictionary(t => t.Id);
+                pipelineRunStatus.TaskRunStatusList.ForEach(t => {
+                    t.TaskAnnoName = nodeDic[t.ShapeId].AnnoName;
+                    if (t.Log == null) return;
+                    if (t.Log.StartTime == null) t.Log.ExecTime = null;
+                    else if (t.Log.CompletionTime == null) t.Log.ExecTime = DateTime.Now - t.Log.StartTime;
+                    else t.Log.ExecTime = t.Log.CompletionTime - t.Log.StartTime;
+                });
                 pipelineHistory
                     .SetStatus(
                         pipelineRunStatus.Status,
                         pipelineRunStatus.StartTime,
-                        pipelineHistory.CompletionTime,
-                        pipelineHistory.Percent);
+                        pipelineRunStatus.CompletionTime,
+                        pipelineRunStatus.Percent,
+                        pipelineRunStatus.Logs);
 
                 await _pipelineHistoryRepository.UpdateAsync(pipelineHistory);
 

@@ -25,12 +25,13 @@ namespace Nebula.CI.Services.PipelineHistory
             PipelineId = pipelineId;
         }
 
-        public PipelineHistory SetStatus(string status, DateTime? startTime, DateTime? completionTime, int percent)
+        public PipelineHistory SetStatus(string status, DateTime? startTime, DateTime? completionTime, int percent, string log)
         {
             Status = status;
             StartTime = startTime;
             CompletionTime = completionTime;
             Percent = percent;
+            ExtraProperties["Logs"] = log;
             return this;
         }
 

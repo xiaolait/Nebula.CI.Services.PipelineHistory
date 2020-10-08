@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace Nebula.CI.Services.PipelineHistory
 {
     public class TaskRunStatus
     {
         public string Task { get; set; }//taskref
-        public string TaskAnnoName { get; set; } = "";
+        public string TaskAnnoName { get; set; }
         public string ShapeId { get; set; }//taskname
-        public TaskRunLog Log { get; set; } = null;
+        public TaskRunLog Log { get; set; }
     }
 
     public class TaskRunLog
@@ -18,6 +19,7 @@ namespace Nebula.CI.Services.PipelineHistory
         public string Status { get; set; }
         public DateTime? StartTime { get; set; }
         public DateTime? CompletionTime { get; set; }
+        public TimeSpan? ExecTime { get; set; }
     }
 
     public class PipelineRunStatus
@@ -34,8 +36,14 @@ namespace Nebula.CI.Services.PipelineHistory
                 TaskRunStatusList.ForEach(t => {
                     if (t.Log.Status == "Succeeded") taskSuccessedNum++;
                 });
-                return (int)((taskSuccessedNum * 1.0) / TaskRunStatusList.Count);
+                return (taskSuccessedNum * 100) / TaskRunStatusList.Count;
             } }
+
+        public string Logs { get
+            {
+                return JsonConvert.SerializeObject(TaskRunStatusList);
+            }
+        }
     }
 
 

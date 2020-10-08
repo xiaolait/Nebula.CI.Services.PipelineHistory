@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Volo.Abp.BackgroundJobs" Version="3.2.0" />
+    <PackageReference Include="KubernetesClient" Version="2.0.33" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Nebula.CI.Services.PipelineHistory.Domain\Nebula.CI.Services.PipelineHistory.Domain.csproj" />
+    <ProjectReference Include="..\Nebula.CI.Services.PipelineHistory.Background.Args\Nebula.CI.Services.PipelineHistory.Background.Args.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Services\" />
+    <Folder Include="Models\" />
+  </ItemGroup>
+</Project>

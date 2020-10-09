@@ -40,6 +40,10 @@ namespace Nebula.CI.Services.PipelineHistory
                 var nodeDic = Digram.CreateInstance(pipelineHistory.Diagram).NodeList.ToDictionary(t => t.Id);
                 pipelineRunStatus.TaskRunStatusList.ForEach(t => {
                     t.TaskAnnoName = nodeDic[t.ShapeId].AnnoName;
+                    t.ConfigUrl = nodeDic[t.ShapeId].ConfigUrl;
+                    t.ResultUrl = nodeDic[t.ShapeId].ResultUrl;
+                    nodeDic[t.ShapeId].Destination.ForEach(id => t.NextShapes.Add(id));
+
                     if (t.Log == null) return;
                     if (t.Log.StartTime == null) t.Log.ExecTime = null;
                     else if (t.Log.CompletionTime == null) t.Log.ExecTime = DateTime.Now - t.Log.StartTime;

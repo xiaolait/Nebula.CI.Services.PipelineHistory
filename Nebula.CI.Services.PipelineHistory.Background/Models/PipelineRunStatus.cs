@@ -9,7 +9,11 @@ namespace Nebula.CI.Services.PipelineHistory
         public string Task { get; set; }//taskref
         public string TaskAnnoName { get; set; }
         public string ShapeId { get; set; }//taskname
+        public string ConfigUrl { get; set; }
+        public string ResultUrl { get; set; }
         public TaskRunLog Log { get; set; }
+        public List<string> NextShapes { get; set; } = new List<string>();
+        
     }
 
     public class TaskRunLog

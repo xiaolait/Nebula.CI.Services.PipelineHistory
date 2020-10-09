@@ -11,7 +11,7 @@ namespace Nebula.CI.Services.PipelineHistory
 
         public async Task HandleEventAsync(EntityUpdatingEventData<PipelineHistory> eventData)
         {
-            
+            await Task.Delay(1);
             Console.WriteLine($"updating pipelinehistory:{eventData.Entity.Id}");
         }
     }

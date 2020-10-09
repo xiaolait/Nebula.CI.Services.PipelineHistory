@@ -5,7 +5,7 @@ using Volo.Abp.EntityFrameworkCore;
 
 namespace Nebula.CI.Services.PipelineHistory
 {
-    [ConnectionStringName("mysql")]
+    [ConnectionStringName("PipelineHistory")]
     public class PipelineHistoryDbContext : AbpDbContext<PipelineHistoryDbContext>
     {
         public DbSet<PipelineHistory> PipelineHistories { get; set; }

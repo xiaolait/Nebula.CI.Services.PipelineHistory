@@ -13,19 +13,15 @@ namespace Nebula.CI.Services.PipelineHistory
     public class PipelineHistoryStatusCheckerWorker : AsyncPeriodicBackgroundWorkerBase
     {
         private readonly List<int> _pipelineHistoryIdList = new List<int>();
-        private readonly PipelineRunService _pipelineRunService;
-        private readonly IRepository<PipelineHistory, int> _pipelineHistoryRepository;
 
         public PipelineHistoryStatusCheckerWorker(
                 AbpTimer timer,
-                IServiceScopeFactory serviceScopeFactory,
-                PipelineRunService pipelineRunService
-            ) : base(
+                IServiceScopeFactory serviceScopeFactory
+                ) : base(
                 timer,
                 serviceScopeFactory)
         {
             Timer.Period = 5000; //5 seconds
-            _pipelineRunService = pipelineRunService;
         }
 
         protected override async Task DoWorkAsync(
@@ -34,9 +30,18 @@ namespace Nebula.CI.Services.PipelineHistory
             for(int i= _pipelineHistoryIdList.Count-1; i>=0; i--)
             {
                 var pipelineHistoryId = _pipelineHistoryIdList[i];
-                var pipelineRunStatus = await _pipelineRunService.GetStatusAsync(pipelineHistoryId.ToString());
+              
 
-                var pipelineHistory = await _pipelineHistoryRepository.GetAsync(pipelineHistoryId);
+                var pipelineHistoryRepository = workerContext.ServiceProvider
+                    .GetRequiredService<IRepository<PipelineHistory, int>>();
+                var pipelineProxy = workerContext.ServiceProvider
+                    .GetRequiredService<IPipelineProxy>();
+                var pipelineRunService = workerContext.ServiceProvider
+                    .GetRequiredService<PipelineRunService>();
+
+
+                var pipelineRunStatus = await pipelineRunService.GetStatusAsync(pipelineHistoryId.ToString());
+                var pipelineHistory = await pipelineHistoryRepository.GetAsync(pipelineHistoryId);
                 var nodeDic = Digram.CreateInstance(pipelineHistory.Diagram).NodeList.ToDictionary(t => t.Id);
                 pipelineRunStatus.TaskRunStatusList.ForEach(t => {
                     t.TaskAnnoName = nodeDic[t.ShapeId].AnnoName;
@@ -57,11 +62,15 @@ namespace Nebula.CI.Services.PipelineHistory
                         pipelineRunStatus.Percent,
                         pipelineRunStatus.Logs);
 
-                await _pipelineHistoryRepository.UpdateAsync(pipelineHistory);
+                await pipelineHistoryRepository.UpdateAsync(pipelineHistory);
 
                 if (pipelineHistory.Status == "Succeeded" || pipelineHistory.Status == "Failed")
                 {
                     _pipelineHistoryIdList.RemoveAt(i);
+                    await pipelineProxy.UpdateStatusAsync(
+                        pipelineHistory.PipelineId,
+                        pipelineHistory.Status,
+                        ((DateTime)(pipelineHistory.CompletionTime)).ToString("yyyy-MM-dd HH:mm:ss"));
                 }
 
                 //Console.WriteLine(JsonConvert.SerializeObject(logs));

@@ -5,10 +5,10 @@ using Volo.Abp.DependencyInjection;
 
 namespace Nebula.CI.Services.PipelineHistory
 {
-    public interface IPipelineProxy : ITransientDependency
+    public interface IPipelineProxy
     {
         Task<List<int>> GetIdListAsync();
 
-        Task UpdateStatusAsync(string status, DateTime? startTime, DateTime? completionTime, int percent, string log);
+        Task UpdateStatusAsync(int id, string status, string time);
     }
 }

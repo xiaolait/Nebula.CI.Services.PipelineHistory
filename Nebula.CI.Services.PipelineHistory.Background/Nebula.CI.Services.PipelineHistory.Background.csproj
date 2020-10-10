@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Nebula.CI.Services.PipelineHistory.Domain\Nebula.CI.Services.PipelineHistory.Domain.csproj" />
     <ProjectReference Include="..\Nebula.CI.Services.PipelineHistory.Background.Args\Nebula.CI.Services.PipelineHistory.Background.Args.csproj" />
+    <ProjectReference Include="..\Nebula.CI.Services.PipelineHistory.Application.Contracts\Nebula.CI.Services.PipelineHistory.Application.Contracts.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Services\" />

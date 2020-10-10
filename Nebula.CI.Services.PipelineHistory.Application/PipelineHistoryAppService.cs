@@ -13,13 +13,12 @@ namespace Nebula.CI.Services.PipelineHistory
     {
         private readonly IRepository<PipelineHistory, int> _pipelineHistoryRepository;
         private readonly IBackgroundJobManager _backgroundJobManager;
-        private readonly IPipelineProxy _pipelineProxy;
+        public IPipelineProxy PipelineProxy { get; set; }
 
-        public PipelineHistoryAppService(IRepository<PipelineHistory, int> pipelineHistoryRepository, IBackgroundJobManager backgroundJobManager, IPipelineProxy pipelineProxy = null)
+        public PipelineHistoryAppService(IRepository<PipelineHistory, int> pipelineHistoryRepository, IBackgroundJobManager backgroundJobManager)
         {
             _pipelineHistoryRepository = pipelineHistoryRepository;
             _backgroundJobManager = backgroundJobManager;
-            _pipelineProxy = pipelineProxy;
         }
 
         public async Task CreateAsync(PipelineHistoryCreateDto input)
@@ -32,11 +31,6 @@ namespace Nebula.CI.Services.PipelineHistory
                 Id = pipelineHistory.Id,
                 Diagram = pipelineHistory.Diagram
             });
-        }
-
-        public Task CreatePlayBackAsync(int id)
-        {
-            throw new NotImplementedException();
         }
 
         public async Task DeleteAsync(int id)
@@ -60,13 +54,9 @@ namespace Nebula.CI.Services.PipelineHistory
 
         public async Task<List<PipelineHistoryBaseDto>> GetRunningListAsync()
         {
-            var pipelineHistoryList = new List<PipelineHistoryBaseDto>();
-            var pipelineIdList = await _pipelineProxy.GetIdListAsync() ?? new List<int>();
-            pipelineIdList.ForEach(async pid => {
-                var pipelineHistories = await _pipelineHistoryRepository.Where(s => (s.PipelineId == pid) && (s.CompletionTime == null)).ToListAsync();
-                pipelineHistoryList.AddRange(ObjectMapper.Map<List<PipelineHistory>, List<PipelineHistoryBaseDto>>(pipelineHistories??new List<PipelineHistory>()));
-            });
-            return pipelineHistoryList;
+            var pipelineIdList = await PipelineProxy?.GetIdListAsync() ?? new List<int>();
+            var pipelineHistories = await _pipelineHistoryRepository.Where(s => (pipelineIdList.Contains(s.PipelineId)) && (s.CompletionTime == null)).ToListAsync();
+            return ObjectMapper.Map<List<PipelineHistory>, List<PipelineHistoryBaseDto>>(pipelineHistories??new List<PipelineHistory>());
         }
     }
 }

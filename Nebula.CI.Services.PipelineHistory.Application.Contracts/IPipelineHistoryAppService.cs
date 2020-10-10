@@ -8,8 +8,6 @@ namespace Nebula.CI.Services.PipelineHistory
     public interface IPipelineHistoryAppService : IApplicationService
     {
         Task CreateAsync(PipelineHistoryCreateDto input);
-        
-        Task CreatePlayBackAsync(int id);
 
         Task<List<PipelineHistoryBaseDto>> GetListAsync(int pipelineId);
 

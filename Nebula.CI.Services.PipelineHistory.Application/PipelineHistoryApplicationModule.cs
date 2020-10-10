@@ -6,6 +6,7 @@ using Volo.Abp.Modularity;
 namespace Nebula.CI.Services.PipelineHistory
 {
     [DependsOn(typeof(AbpAutoMapperModule))]
+    [DependsOn(typeof(PipelineHistoryBackgroundArgsModule))]
     public class PipelineHistoryApplicationModule : AbpModule
     {
         public override void ConfigureServices(ServiceConfigurationContext context)

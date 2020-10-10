@@ -9,10 +9,12 @@ namespace Nebula.CI.Services.PipelineHistory
     public class PipelineHistoryCreatedJob : BackgroundJob<PipelineHistoryCreatedArgs>, ITransientDependency
     {
         private readonly PipelineHistoryStatusCheckerWorker _pipelineHistoryStatusCheckerWorker;
+        private readonly PipelineRunService _pipelineRunService;
 
-        public PipelineHistoryCreatedJob(PipelineHistoryStatusCheckerWorker pipelineHistoryStatusCheckerWorker)
+        public PipelineHistoryCreatedJob(PipelineHistoryStatusCheckerWorker pipelineHistoryStatusCheckerWorker, PipelineRunService pipelineRunService)
         {
             _pipelineHistoryStatusCheckerWorker = pipelineHistoryStatusCheckerWorker;
+            _pipelineRunService = pipelineRunService;
         }
 
         public override void Execute(PipelineHistoryCreatedArgs args)
@@ -32,6 +34,7 @@ namespace Nebula.CI.Services.PipelineHistory
                 node.Source.ForEach(r => runAfter.Add(r));
                 pipelineRun.AddTask(node.Id, node.Name, @params, inputResources, runAfter);
             }
+            _pipelineRunService.CreateAsync(pipelineRun).Wait();
 
             _pipelineHistoryStatusCheckerWorker.AddPipelineHistoryId(args.Id);
         }

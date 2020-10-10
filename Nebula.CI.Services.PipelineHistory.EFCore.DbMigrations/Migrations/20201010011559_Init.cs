@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Nebula.CI.Services.PipelineHistory.EFCore.DbMigrations.Migrations
@@ -17,6 +18,11 @@ namespace Nebula.CI.Services.PipelineHistory.EFCore.DbMigrations.Migrations
                     ConcurrencyStamp = table.Column<string>(maxLength: 40, nullable: true),
                     No = table.Column<int>(nullable: false),
                     Diagram = table.Column<string>(nullable: true),
+                    Status = table.Column<string>(nullable: true),
+                    StartTime = table.Column<DateTime>(nullable: true),
+                    CompletionTime = table.Column<DateTime>(nullable: true),
+                    Percent = table.Column<int>(nullable: false),
+                    PipelineName = table.Column<string>(nullable: true),
                     PipelineId = table.Column<int>(nullable: false)
                 },
                 constraints: table =>

@@ -13,11 +13,13 @@ namespace Nebula.CI.Services.PipelineHistory
     {
         private readonly IRepository<PipelineHistory, int> _pipelineHistoryRepository;
         private readonly IBackgroundJobManager _backgroundJobManager;
+        private readonly IPipelineProxy _pipelineProxy;
 
-        public PipelineHistoryAppService(IRepository<PipelineHistory, int> pipelineHistoryRepository, IBackgroundJobManager backgroundJobManager)
+        public PipelineHistoryAppService(IRepository<PipelineHistory, int> pipelineHistoryRepository, IBackgroundJobManager backgroundJobManager, IPipelineProxy pipelineProxy = null)
         {
             _pipelineHistoryRepository = pipelineHistoryRepository;
             _backgroundJobManager = backgroundJobManager;
+            _pipelineProxy = pipelineProxy;
         }
 
         public async Task CreateAsync(PipelineHistoryCreateDto input)
@@ -30,6 +32,11 @@ namespace Nebula.CI.Services.PipelineHistory
                 Id = pipelineHistory.Id,
                 Diagram = pipelineHistory.Diagram
             });
+        }
+
+        public Task CreatePlayBackAsync(int id)
+        {
+            throw new NotImplementedException();
         }
 
         public async Task DeleteAsync(int id)
@@ -49,6 +56,17 @@ namespace Nebula.CI.Services.PipelineHistory
             var pipelineHistories = await _pipelineHistoryRepository.Where(s => s.PipelineId == pipelineId).ToListAsync();
 
             return ObjectMapper.Map<List<PipelineHistory>, List<PipelineHistoryBaseDto>>(pipelineHistories);
+        }
+
+        public async Task<List<PipelineHistoryBaseDto>> GetRunningListAsync()
+        {
+            var pipelineHistoryList = new List<PipelineHistoryBaseDto>();
+            var pipelineIdList = await _pipelineProxy.GetIdListAsync() ?? new List<int>();
+            pipelineIdList.ForEach(async pid => {
+                var pipelineHistories = await _pipelineHistoryRepository.Where(s => (s.PipelineId == pid) && (s.CompletionTime == null)).ToListAsync();
+                pipelineHistoryList.AddRange(ObjectMapper.Map<List<PipelineHistory>, List<PipelineHistoryBaseDto>>(pipelineHistories??new List<PipelineHistory>()));
+            });
+            return pipelineHistoryList;
         }
     }
 }

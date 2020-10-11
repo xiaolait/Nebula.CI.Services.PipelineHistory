@@ -70,7 +70,7 @@ namespace Nebula.CI.Services.PipelineHistory
                     await pipelineProxy.UpdateStatusAsync(
                         pipelineHistory.PipelineId,
                         pipelineHistory.Status,
-                        ((DateTime)(pipelineHistory.CompletionTime)).ToString("yyyy-MM-dd HH:mm:ss"));
+                        ((DateTime)(pipelineHistory.CompletionTime)).AddHours(8).ToString("yyyy-MM-dd HH:mm:ss"));
                 }
 
                 //Console.WriteLine(JsonConvert.SerializeObject(logs));

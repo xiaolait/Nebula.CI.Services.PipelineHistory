@@ -11,7 +11,7 @@ using Volo.Abp.DependencyInjection;
 
 namespace Nebula.CI.Services.PipelineHistory
 {
-    public class PipelineRunService : InstanceOperator, ITransientDependency
+    public class PipelineRunService : ITransientDependency
     {
         private readonly Kubernetes _client;
 
@@ -68,8 +68,8 @@ namespace Nebula.CI.Services.PipelineHistory
             {
                 log.Status = pipeLineStatus.Value<JArray>("conditions").First.Value<string>("reason");
             }
-            log.CompletionTime = pipeLineStatus.Value<DateTime?>("completionTime");
-            log.StartTime = pipeLineStatus.Value<DateTime?>("startTime");
+            log.CompletionTime = pipeLineStatus.Value<DateTime?>("completionTime")?.ToUniversalTime();
+            log.StartTime = pipeLineStatus.Value<DateTime?>("startTime")?.ToUniversalTime();
 
             var tasks = pipeLineStatus.Value<JObject>("pipelineSpec").Value<JArray>("tasks");
             foreach (var task in tasks)
@@ -94,8 +94,8 @@ namespace Nebula.CI.Services.PipelineHistory
                     {
                         var taskStatus = taskRunContent.Value<JObject>("status");
                         var podName = taskStatus.Value<string>("podName");
-                        var startTime = taskStatus.Value<DateTime?>("startTime");
-                        var completionTime = taskStatus.Value<DateTime?>("completionTime");
+                        var startTime = taskStatus.Value<DateTime?>("startTime")?.ToUniversalTime();
+                        var completionTime = taskStatus.Value<DateTime?>("completionTime")?.ToUniversalTime();
                         var containers = taskStatus.Value<JArray>("steps");
                         var conditions = taskStatus.Value<JArray>("conditions");
                         var status = (conditions.First as JObject)?.Value<string>("reason");

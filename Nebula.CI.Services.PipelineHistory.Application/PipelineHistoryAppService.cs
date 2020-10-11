@@ -55,7 +55,7 @@ namespace Nebula.CI.Services.PipelineHistory
         public async Task<List<PipelineHistoryBaseDto>> GetRunningListAsync()
         {
             var pipelineIdList = await PipelineProxy?.GetIdListAsync() ?? new List<int>();
-            var pipelineHistories = await _pipelineHistoryRepository.Where(s => (pipelineIdList.Contains(s.PipelineId)) && (s.CompletionTime == null)).ToListAsync();
+            var pipelineHistories = await _pipelineHistoryRepository.Where(s => (pipelineIdList.Contains(s.PipelineId)) && (s.StartTime != null) && (s.CompletionTime == null)).ToListAsync();
             return ObjectMapper.Map<List<PipelineHistory>, List<PipelineHistoryBaseDto>>(pipelineHistories??new List<PipelineHistory>());
         }
     }

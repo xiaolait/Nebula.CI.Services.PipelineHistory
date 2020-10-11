@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using k8s;
 using k8s.Models;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Volo.Abp.DependencyInjection;
 
@@ -22,8 +23,15 @@ namespace Nebula.CI.Services.PipelineHistory
         public async Task CreateAsync(PipelineRun pipelineRun)
         {
             var pvc = CreatePVC(pipelineRun.Metadata.Name, pipelineRun.Metadata.Namespace);
-            await _client.CreateNamespacedPersistentVolumeClaimAsync(pvc, pipelineRun.Metadata.Namespace);
-            await _client.CreateNamespacedCustomObjectAsync(pipelineRun, "tekton.dev", "v1beta1", pipelineRun.Metadata.Namespace, "pipelineruns");
+            _client.CreateNamespacedPersistentVolumeClaimAsync(pvc, pipelineRun.Metadata.Namespace).Wait();
+
+            JsonSerializerSettings jss = new JsonSerializerSettings();
+            jss.NullValueHandling = NullValueHandling.Ignore;
+            jss.Formatting = Formatting.Indented;
+            jss.ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver();
+
+            var pr = JObject.Parse(JsonConvert.SerializeObject(pipelineRun,Formatting.None,jss));
+            _client.CreateNamespacedCustomObjectAsync(pr, "tekton.dev", "v1beta1", pipelineRun.Metadata.Namespace, "pipelineruns").Wait();
         }
 
         public async Task DeleteAsync(int id)
@@ -38,7 +46,7 @@ namespace Nebula.CI.Services.PipelineHistory
             var pipeLine = new JObject();
             try
             {
-                pipeLine = await _client.GetNamespacedCustomObjectAsync("tekton.dev", "v1beta1", "ci-nebula", "pipelineruns", "3") as JObject;
+                pipeLine = await _client.GetNamespacedCustomObjectAsync("tekton.dev", "v1beta1", "ci-nebula", "pipelineruns", pipelineRunName) as JObject;
             }
             catch (Exception)
             {

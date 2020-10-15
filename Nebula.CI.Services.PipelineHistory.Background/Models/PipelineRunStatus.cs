@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace Nebula.CI.Services.PipelineHistory
 {
@@ -45,7 +46,16 @@ namespace Nebula.CI.Services.PipelineHistory
 
         public string Logs { get
             {
-                return JsonConvert.SerializeObject(TaskRunStatusList);
+
+                var logs =  JsonConvert.SerializeObject(TaskRunStatusList);
+                var taskRunStatusList = JsonConvert.DeserializeObject<List<TaskRunStatus>>(logs);
+                taskRunStatusList.ForEach(t => {
+                    if (t?.Log?.StartTime != null) t.Log.StartTime = ((DateTime)t.Log.StartTime).AddHours(8);
+                    if (t?.Log?.CompletionTime != null) t.Log.CompletionTime = ((DateTime)t.Log.CompletionTime).AddHours(8);
+                });
+                return JsonConvert.SerializeObject(taskRunStatusList, Formatting.Indented, 
+                    new IsoDateTimeConverter(){DateTimeFormat = "yyyy-MM-dd HH:mm:ss"}
+                );
             }
         }
     }

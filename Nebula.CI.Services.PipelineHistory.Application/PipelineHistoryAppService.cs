@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Application.Services;
 using Volo.Abp.BackgroundJobs;
@@ -52,6 +53,7 @@ namespace Nebula.CI.Services.PipelineHistory
             return ObjectMapper.Map<List<PipelineHistory>, List<PipelineHistoryBaseDto>>(pipelineHistories);
         }
 
+        [Authorize]
         public async Task<List<PipelineHistoryBaseDto>> GetRunningListAsync()
         {
             var pipelineIdList = await PipelineProxy?.GetIdListAsync() ?? new List<int>();

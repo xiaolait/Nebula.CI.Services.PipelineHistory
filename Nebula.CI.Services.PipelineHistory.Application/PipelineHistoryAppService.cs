@@ -25,22 +25,19 @@ namespace Nebula.CI.Services.PipelineHistory
         public async Task CreateAsync(PipelineHistoryCreateDto input)
         {
             var pipelineHistory = await _pipelineHistoryRepository.InsertAsync(new PipelineHistory(input.No, input.Diagram, input.PipelineId));
-
+            /*
             await UnitOfWorkManager.Current.SaveChangesAsync();
 
             await _backgroundJobManager.EnqueueAsync(new PipelineHistoryCreatedArgs {
                 Id = pipelineHistory.Id,
                 Diagram = pipelineHistory.Diagram
             });
+            */
         }
 
         public async Task DeleteAsync(int id)
         {
             await _pipelineHistoryRepository.DeleteAsync(id);
-
-            await _backgroundJobManager.EnqueueAsync(new PipelineHistoryDeletedArgs {
-                Id = id
-            });
         }
 
         public async Task<PipelineHistoryDetailDto> GetDetailAsync(int id)

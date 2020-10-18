@@ -37,6 +37,10 @@ namespace Nebula.CI.Services.PipelineHistory
         public async Task DeleteAsync(int id)
         {
             await _pipelineHistoryRepository.DeleteAsync(id);
+
+            await _backgroundJobManager.EnqueueAsync(new PipelineHistoryDeletedArgs {
+                Id = id
+            });
         }
 
         public async Task<PipelineHistoryDetailDto> GetDetailAsync(int id)

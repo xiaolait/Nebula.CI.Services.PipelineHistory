@@ -13,26 +13,16 @@ namespace Nebula.CI.Services.PipelineHistory
     public class PipelineHistoryAppService : ApplicationService, IPipelineHistoryAppService
     {
         private readonly IRepository<PipelineHistory, int> _pipelineHistoryRepository;
-        private readonly IBackgroundJobManager _backgroundJobManager;
         public IPipelineProxy PipelineProxy { get; set; }
 
-        public PipelineHistoryAppService(IRepository<PipelineHistory, int> pipelineHistoryRepository, IBackgroundJobManager backgroundJobManager)
+        public PipelineHistoryAppService(IRepository<PipelineHistory, int> pipelineHistoryRepository)
         {
             _pipelineHistoryRepository = pipelineHistoryRepository;
-            _backgroundJobManager = backgroundJobManager;
         }
 
         public async Task CreateAsync(PipelineHistoryCreateDto input)
         {
             var pipelineHistory = await _pipelineHistoryRepository.InsertAsync(new PipelineHistory(input.No, input.Diagram, input.PipelineId));
-            /*
-            await UnitOfWorkManager.Current.SaveChangesAsync();
-
-            await _backgroundJobManager.EnqueueAsync(new PipelineHistoryCreatedArgs {
-                Id = pipelineHistory.Id,
-                Diagram = pipelineHistory.Diagram
-            });
-            */
         }
 
         public async Task DeleteAsync(int id)

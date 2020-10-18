@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.DependencyInjection;
@@ -17,6 +18,7 @@ namespace Nebula.CI.Services.PipelineHistory
 
         public async Task HandleEventAsync(PipelineDeletedEto eventData)
         {
+            Console.WriteLine($"recv pipeline:{eventData.Id} is deleted");
             await _pipelineHistoryRepository.DeleteAsync(s => s.PipelineId == eventData.Id);
         }
     }

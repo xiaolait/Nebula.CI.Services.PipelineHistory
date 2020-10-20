@@ -26,7 +26,7 @@ namespace Nebula.CI.Services.PipelineHistory
 
         public PipelineRun AddTask(string taskName, string task, List<Param> @params, List<PipelineTaskInputResource> inputResources, List<string> runAfter)
         {
-            Spec.PipelineSpec.AddTask(Metadata.Name, taskName, task, @params, inputResources, runAfter);
+            Spec.AddTask(Metadata.Name, taskName, task, @params, inputResources, runAfter);
 
             return this;
         }

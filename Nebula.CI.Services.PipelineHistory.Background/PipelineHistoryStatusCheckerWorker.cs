@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Volo.Abp.BackgroundWorkers;
@@ -12,7 +13,8 @@ namespace Nebula.CI.Services.PipelineHistory
 {
     public class PipelineHistoryStatusCheckerWorker : AsyncPeriodicBackgroundWorkerBase
     {
-        private readonly List<int> _pipelineHistoryIdList = new List<int>();
+        private List<int> _pipelineHistoryIdList = new List<int>();
+        private bool _isInited = false;
 
         public PipelineHistoryStatusCheckerWorker(
                 AbpTimer timer,
@@ -27,10 +29,27 @@ namespace Nebula.CI.Services.PipelineHistory
         protected override async Task DoWorkAsync(
             PeriodicBackgroundWorkerContext workerContext)
         {
-            for(int i= _pipelineHistoryIdList.Count-1; i>=0; i--)
+            if (!_isInited)
+            {
+                await InitAsync(workerContext);
+                _isInited = true;
+            }
+            await DoPeriodWorkAsync(workerContext);
+        }
+
+        private async Task InitAsync(PeriodicBackgroundWorkerContext workerContext)
+        {
+            var pipelineHistoryRepository = workerContext.ServiceProvider
+                .GetRequiredService<IRepository<PipelineHistory, int>>();
+
+            _pipelineHistoryIdList = await pipelineHistoryRepository.Where(p => !p.IsFinish()).Select(p => p.Id).ToListAsync();
+        }
+
+        private async Task DoPeriodWorkAsync(PeriodicBackgroundWorkerContext workerContext)
+        {
+            for (int i = _pipelineHistoryIdList.Count - 1; i >= 0; i--)
             {
                 var pipelineHistoryId = _pipelineHistoryIdList[i];
-              
 
                 var pipelineHistoryRepository = workerContext.ServiceProvider
                     .GetRequiredService<IRepository<PipelineHistory, int>>();
@@ -64,7 +83,7 @@ namespace Nebula.CI.Services.PipelineHistory
 
                 await pipelineHistoryRepository.UpdateAsync(pipelineHistory);
 
-                if (pipelineHistory.Status == "Succeeded" || pipelineHistory.Status == "Failed")
+                if (pipelineHistory.IsFinish())
                 {
                     _pipelineHistoryIdList.RemoveAt(i);
                     await pipelineProxy.UpdateStatusAsync(

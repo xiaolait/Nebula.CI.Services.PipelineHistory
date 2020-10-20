@@ -1,10 +1,12 @@
 ﻿using System;
-namespace Nebula.CI.Services.PipelineHistory.Background
+namespace Nebula.CI.Services.PipelineHistory
 {
-    public class PipelineHistoryExtension
+    public static class PipelineHistoryExtension
     {
-        public PipelineHistoryExtension()
+        public static bool IsFinish(this PipelineHistory pipelineHistory)
         {
+            if (pipelineHistory.Status.IsIn(new string[] { "Succeeded", "Failed" })) return true;
+            else return false;
         }
     }
 }

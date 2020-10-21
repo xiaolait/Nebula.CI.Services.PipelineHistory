@@ -29,22 +29,24 @@ namespace Nebula.CI.Services.PipelineHistory
         protected override async Task DoWorkAsync(
             PeriodicBackgroundWorkerContext workerContext)
         {
+            /*
             if (!_isInited)
             {
                 await InitAsync(workerContext);
                 _isInited = true;
             }
+            */
             await DoPeriodWorkAsync(workerContext);
         }
-
+        /*
         private async Task InitAsync(PeriodicBackgroundWorkerContext workerContext)
         {
             var pipelineHistoryRepository = workerContext.ServiceProvider
                 .GetRequiredService<IRepository<PipelineHistory, int>>();
 
-            _pipelineHistoryIdList = await pipelineHistoryRepository.Where(p => !p.IsFinish()).Select(p => p.Id).ToListAsync();
+            _pipelineHistoryIdList = await pipelineHistoryRepository.Where(p => !p.()).Select(p => p.Id).ToListAsync();
         }
-
+        */
         private async Task DoPeriodWorkAsync(PeriodicBackgroundWorkerContext workerContext)
         {
             for (int i = _pipelineHistoryIdList.Count - 1; i >= 0; i--)
@@ -53,8 +55,8 @@ namespace Nebula.CI.Services.PipelineHistory
 
                 var pipelineHistoryRepository = workerContext.ServiceProvider
                     .GetRequiredService<IRepository<PipelineHistory, int>>();
-                var pipelineProxy = workerContext.ServiceProvider
-                    .GetRequiredService<IPipelineProxy>();
+                /*var pipelineProxy = workerContext.ServiceProvider
+                    .GetRequiredService<IPipelineProxy>();*/
                 var pipelineRunService = workerContext.ServiceProvider
                     .GetRequiredService<PipelineRunService>();
 
@@ -86,10 +88,12 @@ namespace Nebula.CI.Services.PipelineHistory
                 if (pipelineHistory.IsFinish())
                 {
                     _pipelineHistoryIdList.RemoveAt(i);
+                    /*
                     await pipelineProxy.UpdateStatusAsync(
                         pipelineHistory.PipelineId,
                         pipelineHistory.Status,
                         ((DateTime)(pipelineHistory.CompletionTime)).AddHours(8).ToString("yyyy-MM-dd HH:mm:ss"));
+                    */
                 }
 
                 //Console.WriteLine(JsonConvert.SerializeObject(logs));

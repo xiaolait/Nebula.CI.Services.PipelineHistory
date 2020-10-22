@@ -27,7 +27,32 @@ namespace Nebula.CI.Services.PipelineHistory
             PipelineId = pipelineId;
             UserId = userId;
         }
+        
+        public PipelineHistory SetStatus(string status)
+        {
+            Status = status;
+            return this;
+        }
 
+        public PipelineHistory SetStartTime(DateTime? startTime)
+        {
+            StartTime = startTime;
+            return this;
+        }
+
+        public PipelineHistory SetCompletionTime(DateTime? completionTime)
+        {
+            CompletionTime = completionTime;
+            return this;
+        }
+
+        public PipelineHistory SetPercent(int percent)
+        {
+            Percent = percent;
+            return this;
+        }
+
+        /*
         public PipelineHistory SetStatus(string status, DateTime? startTime, DateTime? completionTime, int percent, string log)
         {
             Status = status;
@@ -37,12 +62,25 @@ namespace Nebula.CI.Services.PipelineHistory
             ExtraProperties["Logs"] = log;
             return this;
         }
-
+        
         public string GetLogs()
         {
             var property = "Logs";
             if (ExtraProperties.ContainsKey(property)) return ExtraProperties[property] as string;
             else return null;
+        }
+        */
+
+        public PipelineHistory SetProperty<T>(string property, object obj)
+        {
+            ExtraProperties[property] = obj;
+            return this;
+        }
+
+        public T GetProperty<T>(string property)
+        {
+            if (ExtraProperties.ContainsKey(property)) return (T)ExtraProperties[property];
+            else return default(T);
         }
     }
 }

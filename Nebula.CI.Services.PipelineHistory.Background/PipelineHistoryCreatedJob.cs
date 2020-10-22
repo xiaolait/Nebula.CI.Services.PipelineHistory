@@ -19,8 +19,7 @@ namespace Nebula.CI.Services.PipelineHistory
 
         public override void Execute(PipelineHistoryCreatedArgs args)
         {
-            Task.Delay(100).Wait();
-            Console.WriteLine($"PipelineHistory:{args.Id} is Created");
+            Console.WriteLine($"PipelineRun:{args.Id} is being Created in background");
 
             var diagram = Digram.CreateInstance(args.Diagram);
             var pipelineRun = new PipelineRun(args.Id.ToString(), "ci-nebula");
@@ -29,14 +28,18 @@ namespace Nebula.CI.Services.PipelineHistory
                 var @params = new List<Param>();
                 var inputResources = new List<PipelineTaskInputResource>();
                 var runAfter = new List<string>();
-                node.Property.Params.ForEach(r => @params.Add(new Param(r.Name, r.Value)));
-                node.Property.Resources.Inputs.ForEach(r => inputResources.Add(new PipelineTaskInputResource(r.Name, r.Resource)));
+                node.Property?.Params.ForEach(r => @params.Add(new Param(r.Name, r.Value)));
+                node.Property?.Resources?.Inputs.ForEach(r => inputResources.Add(new PipelineTaskInputResource(r.Name, r.Resource)));
                 node.Source.ForEach(r => runAfter.Add(r));
                 pipelineRun.AddTask(node.Id, node.Name, @params, inputResources, runAfter);
             }
-            _pipelineRunService.CreateAsync(pipelineRun).Wait();
+            _pipelineRunService.CreateAsync(pipelineRun);
+
+            Console.WriteLine($"PipelineRun:{args.Id} is Created in background");
 
             _pipelineHistoryStatusCheckerWorker.AddPipelineHistoryId(args.Id);
+
+            Console.WriteLine($"PipelineRun:{args.Id} status check id added to background");
         }
     }
 }

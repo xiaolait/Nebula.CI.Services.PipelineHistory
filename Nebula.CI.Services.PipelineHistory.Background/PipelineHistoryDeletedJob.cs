@@ -17,9 +17,11 @@ namespace Nebula.CI.Services.PipelineHistory
 
         public override void Execute(PipelineHistoryDeletedArgs args)
         {
-            _pipelineRunService.DeleteAsync(args.Id).Wait();
-
+            Console.WriteLine($"PipelineRun:{args.Id} is being deleted in background");
+            _pipelineRunService.DeleteAsync(args.Id);
+            Console.WriteLine($"PipelineRun:{args.Id} is deleted in background");
             _pipelineHistoryStatusCheckerWorker.RemovePipelineHistoryId(args.Id);
+            Console.WriteLine($"PipelineRun:{args.Id} status check id removed from background");
         }
     }
 }

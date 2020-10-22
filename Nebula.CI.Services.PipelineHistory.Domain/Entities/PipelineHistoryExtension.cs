@@ -14,5 +14,25 @@ namespace Nebula.CI.Services.PipelineHistory
             if ((pipelineHistory.StartTime != null) && (pipelineHistory.CompletionTime == null)) return true;
             else return false;
         }
+
+        public static string GetLogs(this PipelineHistory pipelineHistory)
+        {
+            return pipelineHistory.GetProperty<string>("Logs");
+        }
+
+        public static PipelineHistory SetLogs(this PipelineHistory pipelineHistory, string logs)
+        {
+            return pipelineHistory.SetProperty<string>("Logs", logs);
+        }
+
+        public static string GetMessage(this PipelineHistory pipelineHistory)
+        {
+            return pipelineHistory.GetProperty<string>("Message");
+        }
+
+        public static PipelineHistory SetMessage(this PipelineHistory pipelineHistory, string logs)
+        {
+            return pipelineHistory.SetProperty<string>("Message", logs);
+        }
     }
 }

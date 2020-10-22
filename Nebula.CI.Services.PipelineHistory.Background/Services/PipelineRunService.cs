@@ -20,7 +20,7 @@ namespace Nebula.CI.Services.PipelineHistory
             _client = client;
         }
 
-        public async Task CreateAsync(PipelineRun pipelineRun)
+        public void CreateAsync(PipelineRun pipelineRun)
         {
             var pvc = CreatePVC(pipelineRun.Metadata.Name, pipelineRun.Metadata.Namespace);
             _client.CreateNamespacedPersistentVolumeClaimAsync(pvc, pipelineRun.Metadata.Namespace).Wait();
@@ -34,10 +34,10 @@ namespace Nebula.CI.Services.PipelineHistory
             _client.CreateNamespacedCustomObjectAsync(pr, "tekton.dev", "v1beta1", pipelineRun.Metadata.Namespace, "pipelineruns").Wait();
         }
 
-        public async Task DeleteAsync(int id)
+        public void DeleteAsync(int id)
         {
-            var objs = await _client.DeleteNamespacedCustomObjectAsync("tekton.dev", "v1beta1", "ci-nebula", "pipelineruns", id.ToString());
-            objs = await _client.DeleteNamespacedPersistentVolumeClaimAsync(id.ToString(), "ci-nebula");
+            _client.DeleteNamespacedCustomObjectAsync("tekton.dev", "v1beta1", "ci-nebula", "pipelineruns", id.ToString()).Wait();
+            _client.DeleteNamespacedPersistentVolumeClaimAsync(id.ToString(), "ci-nebula").Wait();
         }
 
         public async Task<PipelineRunStatus> GetStatusAsync(string pipelineRunName)
@@ -79,10 +79,16 @@ namespace Nebula.CI.Services.PipelineHistory
                 taskRunStatus.ShapeId = task.Value<string>("name");
                 log.TaskRunStatusList.Add(taskRunStatus);
             }
-
+            
             var taskList = tasks.Select(s => s.Value<string>("name")).ToList();
             var taskRuns = pipeLineStatus.Value<JObject>("taskRuns");
 
+            if (log.Status == "Failed" && taskRuns == null)
+            {
+                log.Message = pipeLineStatus.Value<JArray>("conditions").First.Value<string>("message");
+            }
+
+            if (taskRuns == null) return log;
 
             foreach (var taskrunstatus in log.TaskRunStatusList)
             {

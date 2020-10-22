@@ -32,16 +32,17 @@ namespace Nebula.CI.Services.PipelineHistory
         public string Status { get; set; }
         public DateTime? StartTime { get; set; }
         public DateTime? CompletionTime { get; set; }
-
+        public string Message { get; set; }
         public List<TaskRunStatus> TaskRunStatusList { get; set; }
 
         public int Percent { get
             {
-                int taskSuccessedNum = 0;
+                int taskFinishNum = 0;
                 TaskRunStatusList.ForEach(t => {
-                    if (t.Log.Status == "Succeeded") taskSuccessedNum++;
+                    bool? result = true;
+                    if (t?.Log?.Status?.IsIn(new string[] { "Succeeded", "Failed" }) == result) taskFinishNum++;
                 });
-                return (taskSuccessedNum * 100) / TaskRunStatusList.Count;
+                return (taskFinishNum * 100) / TaskRunStatusList.Count;
             } }
 
         public string Logs { get

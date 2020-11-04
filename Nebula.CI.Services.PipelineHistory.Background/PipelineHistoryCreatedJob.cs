@@ -9,12 +9,12 @@ namespace Nebula.CI.Services.PipelineHistory
     public class PipelineHistoryCreatedJob : BackgroundJob<PipelineHistoryCreatedArgs>, ITransientDependency
     {
         private readonly PipelineHistoryStatusCheckerWorker _pipelineHistoryStatusCheckerWorker;
-        private readonly PipelineRunService _pipelineRunService;
+        private readonly PipelineHistoryService _pipelineHistoryService;
 
-        public PipelineHistoryCreatedJob(PipelineHistoryStatusCheckerWorker pipelineHistoryStatusCheckerWorker, PipelineRunService pipelineRunService)
+        public PipelineHistoryCreatedJob(PipelineHistoryStatusCheckerWorker pipelineHistoryStatusCheckerWorker, PipelineHistoryService pipelineHistoryService)
         {
             _pipelineHistoryStatusCheckerWorker = pipelineHistoryStatusCheckerWorker;
-            _pipelineRunService = pipelineRunService;
+            _pipelineHistoryService = pipelineHistoryService;
         }
 
         public override void Execute(PipelineHistoryCreatedArgs args)
@@ -33,11 +33,12 @@ namespace Nebula.CI.Services.PipelineHistory
                 node.Source.ForEach(r => runAfter.Add(r));
                 pipelineRun.AddTask(node.Id, node.Name, @params, inputResources, runAfter);
             }
-            _pipelineRunService.CreateAsync(pipelineRun);
+            _pipelineHistoryService.Create(pipelineRun);
 
             Console.WriteLine($"PipelineRun:{args.Id} is Created in background");
 
-            _pipelineHistoryStatusCheckerWorker.AddPipelineHistoryId(args.Id);
+            //_pipelineHistoryStatusCheckerWorker.AddPipelineHistoryId(args.Id);
+            _pipelineHistoryStatusCheckerWorker.PipelineHistoryCreatedQueue.Enqueue(args.Id);
 
             Console.WriteLine($"PipelineRun:{args.Id} status check id added to background");
         }

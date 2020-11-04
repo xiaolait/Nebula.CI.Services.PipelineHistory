@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,7 +14,10 @@ namespace Nebula.CI.Services.PipelineHistory
 {
     public class PipelineHistoryStatusCheckerWorker : AsyncPeriodicBackgroundWorkerBase
     {
-        private List<int> _pipelineHistoryIdList = new List<int>();
+        public ConcurrentQueue<int> PipelineHistoryCreatedQueue = new ConcurrentQueue<int>();
+        public ConcurrentQueue<int> PipelineHistoryTobeDeleteQueue = new ConcurrentQueue<int>();
+        private HashSet<int> _pipelineHistoryTobeCheckSet = new HashSet<int>();
+        //private List<int> _pipelineHistoryIdList = new List<int>();
         private bool _isInited = false;
 
         public PipelineHistoryStatusCheckerWorker(
@@ -36,6 +40,40 @@ namespace Nebula.CI.Services.PipelineHistory
                 _isInited = true;
             }
             */
+
+            int pipelineHistoryId = 0;
+            while(PipelineHistoryCreatedQueue.TryDequeue(out pipelineHistoryId)) {
+                _pipelineHistoryTobeCheckSet.Add(pipelineHistoryId);
+            }
+
+            var pipelineHistoryService = workerContext.ServiceProvider
+                .GetRequiredService<PipelineHistoryService>();
+            var pipelineHistoryTobeUncheckSet = new HashSet<int>();
+            foreach(var pipelineHistoryTobeCheck in  _pipelineHistoryTobeCheckSet)
+            {
+                try{
+                    var pipelineHistory = await UpdatePipelineHistoryAsync(pipelineHistoryTobeCheck, workerContext);
+                    if (pipelineHistory.IsFinish()) {
+                        pipelineHistoryService.DeletePipelinerun(pipelineHistory.Id);
+                        pipelineHistoryTobeUncheckSet.Add(pipelineHistoryTobeCheck);
+                    }
+                }
+                catch (Exception e) {
+                    Console.WriteLine(e);
+                }
+            }
+            _pipelineHistoryTobeCheckSet.RemoveWhere(p => pipelineHistoryTobeUncheckSet.Contains(p));
+
+            while(PipelineHistoryTobeDeleteQueue.TryDequeue(out pipelineHistoryId)) {
+                if (_pipelineHistoryTobeCheckSet.Contains(pipelineHistoryId)) {
+                    pipelineHistoryService.DeletePipelinerun(pipelineHistoryId);
+                    _pipelineHistoryTobeCheckSet.Remove(pipelineHistoryId);
+                }
+                pipelineHistoryService.DeletePVC(pipelineHistoryId);
+            }
+
+
+            /*
             for (int i = _pipelineHistoryIdList.Count - 1; i >= 0; i--)
             {
                 try{
@@ -46,6 +84,7 @@ namespace Nebula.CI.Services.PipelineHistory
                     Console.WriteLine(e);
                 }
             }
+            */
         }
         /*
         private async Task InitAsync(PeriodicBackgroundWorkerContext workerContext)
@@ -61,10 +100,10 @@ namespace Nebula.CI.Services.PipelineHistory
         {
             var pipelineHistoryRepository = workerContext.ServiceProvider
                 .GetRequiredService<IRepository<PipelineHistory, int>>();
-            var pipelineRunService = workerContext.ServiceProvider
-                .GetRequiredService<PipelineRunService>();
+            var pipelineHistoryService = workerContext.ServiceProvider
+                .GetRequiredService<PipelineHistoryService>();
 
-            var pipelineRunStatus = await pipelineRunService.GetStatusAsync(pipelineHistoryId.ToString());
+            var pipelineRunStatus = await pipelineHistoryService.GetStatusAsync(pipelineHistoryId.ToString());
             var pipelineHistory = await pipelineHistoryRepository.GetAsync(pipelineHistoryId);
             var nodeDic = Digram.CreateInstance(pipelineHistory.Diagram).NodeList.ToDictionary(t => t.Id);
             pipelineRunStatus.TaskRunStatusList.ForEach(t => {
@@ -96,67 +135,8 @@ namespace Nebula.CI.Services.PipelineHistory
             await pipelineHistoryRepository.UpdateAsync(pipelineHistory);
             return pipelineHistory;
         }
-
-        private async Task DoPeriodWorkAsync(PeriodicBackgroundWorkerContext workerContext)
-        {
-            for (int i = _pipelineHistoryIdList.Count - 1; i >= 0; i--)
-            {
-                var pipelineHistoryId = _pipelineHistoryIdList[i];
-
-                var pipelineHistoryRepository = workerContext.ServiceProvider
-                    .GetRequiredService<IRepository<PipelineHistory, int>>();
-                /*var pipelineProxy = workerContext.ServiceProvider
-                    .GetRequiredService<IPipelineProxy>();*/
-                var pipelineRunService = workerContext.ServiceProvider
-                    .GetRequiredService<PipelineRunService>();
-
-
-                var pipelineRunStatus = await pipelineRunService.GetStatusAsync(pipelineHistoryId.ToString());
-                var pipelineHistory = await pipelineHistoryRepository.GetAsync(pipelineHistoryId);
-                var nodeDic = Digram.CreateInstance(pipelineHistory.Diagram).NodeList.ToDictionary(t => t.Id);
-                pipelineRunStatus.TaskRunStatusList.ForEach(t => {
-                    t.TaskAnnoName = nodeDic[t.ShapeId].AnnoName;
-                    t.ConfigUrl = nodeDic[t.ShapeId].ConfigUrl;
-                    t.ResultUrl = nodeDic[t.ShapeId].ResultUrl;
-                    nodeDic[t.ShapeId].Destination.ForEach(id => t.NextShapes.Add(id));
-
-                    if (t.Log == null) return;
-                    if (t.Log.StartTime == null) t.Log.ExecTime = null;
-                    else if (t.Log.CompletionTime == null) t.Log.ExecTime = DateTime.Now - t.Log.StartTime;
-                    else t.Log.ExecTime = t.Log.CompletionTime - t.Log.StartTime;
-                });
-                /*pipelineHistory
-                    .SetStatus(
-                        pipelineRunStatus.Status,
-                        pipelineRunStatus.StartTime,
-                        pipelineRunStatus.CompletionTime,
-                        pipelineRunStatus.Percent,
-                        pipelineRunStatus.Logs)*/
-                pipelineHistory
-                    .SetStatus(pipelineRunStatus.Status)
-                    .SetStartTime(pipelineRunStatus.StartTime)   
-                    .SetCompletionTime(pipelineRunStatus.CompletionTime)    
-                    .SetPercent(pipelineRunStatus.Percent) 
-                    .SetLogs(pipelineRunStatus.Logs)
-                    .SetMessage(pipelineRunStatus.Message);
-
-                await pipelineHistoryRepository.UpdateAsync(pipelineHistory);
-
-                if (pipelineHistory.IsFinish())
-                {
-                    _pipelineHistoryIdList.RemoveAt(i);
-                    /*
-                    await pipelineProxy.UpdateStatusAsync(
-                        pipelineHistory.PipelineId,
-                        pipelineHistory.Status,
-                        ((DateTime)(pipelineHistory.CompletionTime)).AddHours(8).ToString("yyyy-MM-dd HH:mm:ss"));
-                    */
-                }
-
-                //Console.WriteLine(JsonConvert.SerializeObject(logs));
-            }
-        }
-
+        
+        /*
         public void AddPipelineHistoryId(int id)
         {
             _pipelineHistoryIdList.Add(id);
@@ -166,5 +146,6 @@ namespace Nebula.CI.Services.PipelineHistory
         {
             _pipelineHistoryIdList.Remove(id);
         }
+        */
     }
 }

@@ -11,19 +11,19 @@ using Volo.Abp.DependencyInjection;
 
 namespace Nebula.CI.Services.PipelineHistory
 {
-    public class PipelineRunService : ITransientDependency
+    public class PipelineHistoryService : ITransientDependency
     {
         private readonly Kubernetes _client;
 
-        public PipelineRunService(Kubernetes client)
+        public PipelineHistoryService(Kubernetes client)
         {
             _client = client;
         }
 
-        public void CreateAsync(PipelineRun pipelineRun)
+        public void Create(PipelineRun pipelineRun)
         {
             var pvc = CreatePVC(pipelineRun.Metadata.Name, pipelineRun.Metadata.Namespace);
-            _client.CreateNamespacedPersistentVolumeClaimAsync(pvc, pipelineRun.Metadata.Namespace).Wait();
+            _client.CreateNamespacedPersistentVolumeClaim(pvc, pipelineRun.Metadata.Namespace);
 
             JsonSerializerSettings jss = new JsonSerializerSettings();
             jss.NullValueHandling = NullValueHandling.Ignore;
@@ -31,13 +31,25 @@ namespace Nebula.CI.Services.PipelineHistory
             jss.ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver();
 
             var pr = JObject.Parse(JsonConvert.SerializeObject(pipelineRun,Formatting.None,jss));
-            _client.CreateNamespacedCustomObjectAsync(pr, "tekton.dev", "v1beta1", pipelineRun.Metadata.Namespace, "pipelineruns").Wait();
+            _client.CreateNamespacedCustomObject(pr, "tekton.dev", "v1beta1", pipelineRun.Metadata.Namespace, "pipelineruns");
         }
 
+        /*
         public void DeleteAsync(int id)
         {
             _client.DeleteNamespacedCustomObjectAsync("tekton.dev", "v1beta1", "ci-nebula", "pipelineruns", id.ToString()).Wait();
             _client.DeleteNamespacedPersistentVolumeClaimAsync(id.ToString(), "ci-nebula").Wait();
+        }
+        */
+
+        public void DeletePipelinerun(int id)
+        {
+            _client.DeleteNamespacedCustomObject("tekton.dev", "v1beta1", "ci-nebula", "pipelineruns", id.ToString());
+        }
+
+        public void DeletePVC(int id)
+        {
+            _client.DeleteNamespacedPersistentVolumeClaim(id.ToString(), "ci-nebula");
         }
 
         public async Task<PipelineRunStatus> GetStatusAsync(string pipelineRunName)
